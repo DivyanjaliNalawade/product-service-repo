@@ -12,7 +12,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('✅ Connected to MongoDB');
 
-  const port = process.env.PORT || 5001;
+  const port = process.env.PORT || 3004;
   app.listen(port, () => {
     console.log(`🚀 Product Service running on port ${port}`);
   });
