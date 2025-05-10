@@ -1,4 +1,4 @@
-const Product = require('../models/Model');
+const Product = require('../models/product');
 const publishMessage = require('../utils/kafka'); 
 
 // Get all products
