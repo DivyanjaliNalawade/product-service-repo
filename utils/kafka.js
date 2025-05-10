@@ -3,7 +3,7 @@ const kafka = require('kafka-node');
 let producer;
 
 try {
-  const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_BROKER });
+  const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_BROKERS });
 
   producer = new kafka.Producer(client);
 
