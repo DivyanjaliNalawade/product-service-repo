@@ -9,6 +9,7 @@ RUN npm install
 
 # Copy the rest of the application code
 COPY . .
+COPY .env .env
 
 # Expose the application's port
 EXPOSE 3004
