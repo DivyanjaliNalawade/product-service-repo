@@ -1,5 +1,5 @@
-const Product = require('../models/product');
-const publishMessage = require('../utils/kafka');
+const Product = require('../models/productModel');
+const publishMessage = require('../utils/kafka'); 
 
 // Get all products
 exports.getAllProducts = async (req, res) => {
@@ -22,10 +22,12 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// Get products by name
+// Get products by name (case-insensitive)
 exports.getProductByName = async (req, res) => {
   try {
-    const products = await Product.find({ name: req.params.name });
+    const products = await Product.find({
+      name: { $regex: req.params.name, $options: 'i' }
+    });
     if (!products.length) return res.status(404).json({ message: 'No products found with that name' });
     res.json(products);
   } catch (err) {
@@ -33,10 +35,12 @@ exports.getProductByName = async (req, res) => {
   }
 };
 
-// Get products by category
+// Get products by category (case-insensitive)
 exports.getProductByCategory = async (req, res) => {
   try {
-    const products = await Product.find({ category: req.params.category });
+    const products = await Product.find({
+      category: { $regex: req.params.category, $options: 'i' }
+    });
     if (!products.length) return res.status(404).json({ message: 'No products found in that category' });
     res.json(products);
   } catch (err) {
@@ -46,12 +50,12 @@ exports.getProductByCategory = async (req, res) => {
 
 // Create a new product
 exports.createProduct = async (req, res) => {
-  const { name, description, price, imageUrl, category, quantity } = req.body;
-  const product = new Product({ name, description, price, imageUrl, category, quantity });
+  const { name, category, price, quantity, description, imageUrl } = req.body;
+
+  const newProduct = new Product({ name, category, price, quantity, description, imageUrl });
 
   try {
-    const savedProduct = await product.save();
-    publishMessage('product_created', savedProduct);
+    const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -67,8 +71,6 @@ exports.updateProduct = async (req, res) => {
       { new: true }
     );
     if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
-
-    publishMessage('product_updated', updatedProduct);
     res.json(updatedProduct);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -80,9 +82,7 @@ exports.deleteProduct = async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
     if (!deletedProduct) return res.status(404).json({ message: 'Product not found' });
-
-    publishMessage('product_deleted', { id: req.params.id });
-    res.json({ message: 'Product deleted successfully' });
+    res.json({ message: 'Product deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -90,22 +90,26 @@ exports.deleteProduct = async (req, res) => {
 
 // Verify and update stock
 exports.verifyAndUpdateStock = async (req, res) => {
-  const { productId, quantity } = req.body;
-
-  if (!productId || quantity == null)
-    return res.status(400).json({ message: 'Product ID and quantity are required' });
-
   try {
+    const { productId, quantity } = req.body;
+
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: 'Product not found' });
 
-    if (product.quantity < quantity)
-      return res.status(400).json({ message: 'Insufficient stock' });
+    if (product.quantity < quantity) {
+      return res.status(400).json({ message: 'Not enough stock available' });
+    }
 
     product.quantity -= quantity;
     await product.save();
 
-    publishMessage('stock_updated', { productId, quantity: product.quantity });
+    // Optional: publish stock update to Kafka
+    publishMessage('stock-updated', {
+      productId: product._id,
+      updatedQuantity: product.quantity,
+      timestamp: new Date()
+    });
+
     res.json({ message: 'Stock updated successfully', product });
   } catch (err) {
     res.status(500).json({ message: err.message });

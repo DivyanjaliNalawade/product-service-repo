@@ -1,20 +1,27 @@
-const axios = require('axios');
-require('dotenv').config();
+const axios = require("axios");
 
 const authMiddleware = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Unauthorized: No token provided' });
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized: Missing token" });
+  }
 
   try {
-    const response = await axios.get(`${process.env.USER_SERVICE_URL}/api/auth/verify`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    req.user = response.data.user;
-    next();
-  } catch (err) {
-    console.error('Authentication failed:', err.message);
-    return res.status(403).json({ message: 'Forbidden: Invalid token' });
+    const response = await axios.get(
+      `${process.env.HOST_URL}:3001/api/users/verify-token`, // Assuming user service URL is the same
+      {
+        headers: { Authorization: token },
+      }
+    );
+    if (response.data.success) {
+      next(); // Token is valid, proceed
+    } else {
+      res.status(401).json({ message: "Unauthorized: Invalid token" });
+    }
+  } catch (error) {
+    res
+      .status(401)
+      .json({ message: "Authentication failed", error: error.message });
   }
 };
 

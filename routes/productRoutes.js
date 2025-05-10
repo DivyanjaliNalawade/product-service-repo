@@ -5,9 +5,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // Public routes
 router.get('/', productController.getAllProducts);
-router.get('/:id', productController.getProductById);
 router.get('/name/:name', productController.getProductByName);
 router.get('/category/:category', productController.getProductByCategory);
+router.get('/:id', productController.getProductById); // Placed last to avoid conflicts
 
 // Protected routes
 router.post('/', authMiddleware, productController.createProduct);
