@@ -12,6 +12,9 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('✅ Connected to MongoDB');
 
+  // Start Kafka Consumer AFTER DB connection is ready
+  require('./utils/kafkaConsumer');
+
   const port = process.env.PORT || 3004;
   app.listen(port, () => {
     console.log(`🚀 Product Service running on port ${port}`);

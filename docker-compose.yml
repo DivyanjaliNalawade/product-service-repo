@@ -43,9 +43,9 @@ services:
     container_name: product-service
     ports:
       - "3004:3004"
-    depends_on:
-      - mongo
-      - kafka
+    #depends_on:
+     # - mongo
+      #- kafka
     environment:
       - MONGO_URI=mongodb://admin:admin@host.docker.internal:27017
       - PORT=3004
